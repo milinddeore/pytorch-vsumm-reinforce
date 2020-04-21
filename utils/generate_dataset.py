@@ -16,6 +16,13 @@ import math
 import cv2
 import numpy as np
 import h5py
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-p', '--path', type=str, required=True, help="path of video file, whos h5 needs to generate.")
+parser.add_argument('--h5_gen', type=str, required=True, help="path to h5 generated file")
+args = parser.parse_args()
+
 
 class Generate_Dataset:
     def __init__(self, video_path, save_path):
@@ -27,6 +34,7 @@ class Generate_Dataset:
         self.h5_file = h5py.File(save_path, 'w')
 
         self._set_video_list(video_path)
+        print('Video path : {} H5 autogen path : {}'.format(video_path, save_path))
 
     def _set_video_list(self, video_path):
         if os.path.isdir(video_path):
@@ -51,7 +59,8 @@ class Generate_Dataset:
         return frame_feat
 
     def _get_change_points(self, video_feat, n_frame, fps):
-        n = n_frame / fps
+        print('n_frame {} fps {}'.format(n_frame, fps))
+        n = n_frame / math.ceil(fps)
         m = int(math.ceil(n/2.0))
         K = np.dot(video_feat, video_feat.T)
         change_points, _ = cpd_auto(K, m, 1)
@@ -94,7 +103,7 @@ class Generate_Dataset:
             fps = video_capture.get(cv2.CAP_PROP_FPS)
             n_frames = int(video_capture.get(cv2.CAP_PROP_FRAME_COUNT))
 
-            frame_list = []
+            #frame_list = []
             picks = []
             video_feat = None
             video_feat_for_train = None
@@ -142,6 +151,6 @@ class Generate_Dataset:
             self.h5_file['video_{}'.format(video_idx+1)]['n_frame_per_seg'] = n_frame_per_seg
 
 if __name__ == "__main__":
-    gen = Generate_Dataset('/content/pytorch-vsumm-reinforce/BestPlaceIn2020.mp4', '/content/pytorch-vsumm-reinforce/gen_dataset/lp_summe_dataset.h5')
+    gen = Generate_Dataset(args.path, args.h5_gen)
     gen.generate_dataset()
     gen.h5_file.close()
